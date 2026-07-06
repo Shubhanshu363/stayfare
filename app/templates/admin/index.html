@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}
+Admin · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main class="dashboard-page">
+
+	<div class="container">
+
+		<div class="dashboard-heading">
+
+			<div>
+
+				<div class="eyebrow">
+					STAYFARE OPERATIONS
+				</div>
+
+				<h1>
+					Admin dashboard
+				</h1>
+
+				<p>
+					Product activity and platform health.
+				</p>
+
+			</div>
+
+		</div>
+
+
+		<div class="admin-stats">
+
+			<article>
+
+				<span>
+					USERS
+				</span>
+
+				<strong>
+					{{ users }}
+				</strong>
+
+				<small>
+					Registered accounts
+				</small>
+
+			</article>
+
+
+			<article>
+
+				<span>
+					HOTELS
+				</span>
+
+				<strong>
+					{{ hotels }}
+				</strong>
+
+				<small>
+					Searchable properties
+				</small>
+
+			</article>
+
+
+			<article>
+
+				<span>
+					OUTBOUND CLICKS
+				</span>
+
+				<strong>
+					{{ clicks }}
+				</strong>
+
+				<small>
+					Affiliate events
+				</small>
+
+			</article>
+
+
+			<article>
+
+				<span>
+					PRICE ALERTS
+				</span>
+
+				<strong>
+					{{ alerts }}
+				</strong>
+
+				<small>
+					User trackers
+				</small>
+
+			</article>
+
+		</div>
+
+
+		<section class="dashboard-section">
+
+			<div class="section-top">
+
+				<div>
+
+					<div class="eyebrow">
+						SYSTEM HEALTH
+					</div>
+
+					<h2>
+						Provider infrastructure
+					</h2>
+
+				</div>
+
+			</div>
+
+
+			<div class="health-card">
+
+				<div>
+
+					<span class="health-dot"></span>
+
+					<div>
+
+						<strong>
+							Hotel inventory
+						</strong>
+
+						<small>
+							Demo provider active
+						</small>
+
+					</div>
+
+				</div>
+
+				<span class="active-pill">
+					Healthy
+				</span>
+
+			</div>
+
+
+			<div class="health-card">
+
+				<div>
+
+					<span class="health-dot"></span>
+
+					<div>
+
+						<strong>
+							Deal ranking engine
+						</strong>
+
+						<small>
+							Effective-price sorting active
+						</small>
+
+					</div>
+
+				</div>
+
+				<span class="active-pill">
+					Healthy
+				</span>
+
+			</div>
+
+
+			<div class="health-card">
+
+				<div>
+
+					<span class="health-dot warning"></span>
+
+					<div>
+
+						<strong>
+							Restaurant provider
+						</strong>
+
+						<small>
+							Currently using demo recommendations
+						</small>
+
+					</div>
+
+				</div>
+
+				<span class="warning-pill">
+					Demo mode
+				</span>
+
+			</div>
+
+		</section>
+
+	</div>
+
+</main>
+
+{% endblock %}
+

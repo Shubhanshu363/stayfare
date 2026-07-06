@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}
+Your travel desk · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main class="dashboard-page">
+
+	<div class="container">
+
+		<div class="dashboard-heading">
+
+			<div>
+
+				<div class="eyebrow">
+					YOUR TRAVEL DESK
+				</div>
+
+				<h1>
+					Welcome back, {{ current_user.name }}.
+				</h1>
+
+				<p>
+					Your saved stays and price tracking,
+					all in one place.
+				</p>
+
+			</div>
+
+		</div>
+
+
+		<div class="dashboard-stats">
+
+			<article>
+
+				<strong>
+					{{ saved|length }}
+				</strong>
+
+				<span>
+					Saved hotels
+				</span>
+
+			</article>
+
+
+			<article>
+
+				<strong>
+					{{ alerts|length }}
+				</strong>
+
+				<span>
+					Price alerts
+				</span>
+
+			</article>
+
+
+			<article>
+
+				<strong>
+					{{ alerts|selectattr("active")|list|length }}
+				</strong>
+
+				<span>
+					Active trackers
+				</span>
+
+			</article>
+
+		</div>
+
+
+		<section class="dashboard-section">
+
+			<div class="section-top">
+
+				<div>
+
+					<div class="eyebrow">
+						YOUR SHORTLIST
+					</div>
+
+					<h2>
+						Saved stays
+					</h2>
+
+				</div>
+
+			</div>
+
+
+			<div class="saved-grid">
+
+				{% for hotel in saved %}
+
+					<a
+						class="saved-card"
+						href="{{ url_for('main.hotel_detail', slug=hotel.slug) }}"
+					>
+
+						<div class="saved-card-visual">
+							{{ hotel.city }}
+						</div>
+
+						<div class="saved-card-content">
+
+							<span>
+								{{ hotel.area }}
+							</span>
+
+							<h3>
+								{{ hotel.name }}
+							</h3>
+
+							<div>
+								★ {{ hotel.rating }}
+								·
+								{{ hotel.stars }}-star stay
+							</div>
+
+						</div>
+
+					</a>
+
+				{% else %}
+
+					<div class="empty-state">
+
+						<h3>
+							Your shortlist is empty.
+						</h3>
+
+						<p>
+							Save a hotel and it will appear here.
+						</p>
+
+						<a
+							class="button button-primary"
+							href="{{ url_for('main.home') }}"
+						>
+							Explore hotels
+						</a>
+
+					</div>
+
+				{% endfor %}
+
+			</div>
+
+		</section>
+
+
+		<section class="dashboard-section">
+
+			<div class="section-top">
+
+				<div>
+
+					<div class="eyebrow">
+						PRICE INTELLIGENCE
+					</div>
+
+					<h2>
+						Your price alerts
+					</h2>
+
+				</div>
+
+			</div>
+
+
+			<div class="alert-list">
+
+				{% for alert in alerts %}
+
+					<article class="alert-row">
+
+						<div>
+
+							<h3>
+								{{ alert.hotel.name }}
+							</h3>
+
+							<span>
+								{{ alert.hotel.city }}
+							</span>
+
+						</div>
+
+
+						<div>
+
+							<span class="alert-label">
+								Target price
+							</span>
+
+							<strong>
+
+								{% if alert.target_price %}
+
+									₹{{ "{:,}".format(alert.target_price) }}
+
+								{% else %}
+
+									Any meaningful drop
+
+								{% endif %}
+
+							</strong>
+
+						</div>
+
+
+						<div>
+
+							{% if alert.active %}
+
+								<span class="active-pill">
+									Tracking
+								</span>
+
+							{% else %}
+
+								<span class="inactive-pill">
+									Paused
+								</span>
+
+							{% endif %}
+
+						</div>
+
+					</article>
+
+				{% else %}
+
+					<div class="empty-state">
+						You have not created any price alerts yet.
+					</div>
+
+				{% endfor %}
+
+			</div>
+
+		</section>
+
+	</div>
+
+</main>
+
+{% endblock %}
+

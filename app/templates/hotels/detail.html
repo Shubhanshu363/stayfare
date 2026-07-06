@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ hotel.name }} · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main>
+
+	<section class="hotel-hero">
+
+		<div class="container">
+
+			<a class="back-link" href="{{ url_for('main.home') }}">
+				← Back to search
+			</a>
+
+			<div class="hotel-hero-grid">
+
+				<div>
+
+					<div class="eyebrow">
+						{{ hotel.area }} · {{ hotel.city }}
+					</div>
+
+					<h1 class="hotel-detail-title">
+						{{ hotel.name }}
+					</h1>
+
+					<div class="hotel-detail-rating">
+
+						<span class="rating-score">
+							{{ hotel.rating }}
+						</span>
+
+						<span>
+							Excellent
+						</span>
+
+						<span class="muted-text">
+							{{ hotel.reviews }} reviews
+						</span>
+
+						<span class="dot">•</span>
+
+						<span>
+							{{ hotel.stars }}-star hotel
+						</span>
+
+					</div>
+
+					<p class="hotel-description">
+						{{ hotel.description }}
+					</p>
+
+				</div>
+
+
+				{% if offers %}
+
+					<div class="best-deal-summary">
+
+						<div class="eyebrow">
+							BEST DEAL FOUND
+						</div>
+
+						<div class="summary-label">
+							Effective price from
+						</div>
+
+						<div class="summary-price">
+							₹{{ "{:,}".format(offers[0].effective_price) }}
+						</div>
+
+						<div class="summary-note">
+							per night after eligible savings
+						</div>
+
+						{% if offers[0].total_saving > 0 %}
+
+							<div class="saving-pill">
+								Save ₹{{ "{:,}".format(offers[0].total_saving) }}
+							</div>
+
+						{% endif %}
+
+					</div>
+
+				{% endif %}
+
+			</div>
+
+		</div>
+
+	</section>
+
+
+	<section class="comparison-section">
+
+		<div class="container">
+
+			<div class="section-top">
+
+				<div>
+
+					<div class="eyebrow">
+						REAL-PRICE COMPARISON
+					</div>
+
+					<h2>
+						Same stay. Different prices.
+					</h2>
+
+					<p>
+						We rank offers using the effective price,
+						not just the advertised price.
+					</p>
+
+				</div>
+
+				<div class="price-explainer">
+					Listed price + taxes − discount − cashback
+				</div>
+
+			</div>
+
+
+			<div class="comparison-card">
+
+				{% for offer in offers %}
+
+					<article
+						class="offer-row {% if loop.first %}best-offer{% endif %}"
+					>
+
+						<div class="provider-column">
+
+							{% if loop.first %}
+
+								<div class="best-label">
+									BEST VALUE
+								</div>
+
+							{% endif %}
+
+							<h3>
+								{{ offer.provider }}
+							</h3>
+
+							<div class="offer-meta">
+
+								<span>
+									{{ offer.room_name }}
+								</span>
+
+								<span>
+									{{ offer.cancellation }}
+								</span>
+
+								{% if offer.breakfast_included %}
+
+									<span>
+										Breakfast included
+									</span>
+
+								{% endif %}
+
+							</div>
+
+						</div>
+
+
+						<div class="price-breakdown">
+
+							<div>
+
+								<span>
+									Listed
+								</span>
+
+								<strong>
+									₹{{ "{:,}".format(offer.listed_price) }}
+								</strong>
+
+							</div>
+
+
+							{% if offer.discount > 0 %}
+
+								<div class="positive">
+
+									<span>
+										Discount
+									</span>
+
+									<strong>
+										−₹{{ "{:,}".format(offer.discount) }}
+									</strong>
+
+								</div>
+
+							{% endif %}
+
+
+							{% if offer.cashback > 0 %}
+
+								<div class="positive">
+
+									<span>
+										Cashback
+									</span>
+
+									<strong>
+										−₹{{ "{:,}".format(offer.cashback) }}
+									</strong>
+
+								</div>
+
+							{% endif %}
+
+						</div>
+
+
+						<div class="final-price-column">
+
+							<span>
+								Effective price
+							</span>
+
+							<strong>
+								₹{{ "{:,}".format(offer.effective_price) }}
+							</strong>
+
+							<small>
+								Pay now ₹{{ "{:,}".format(offer.payable_now) }}
+							</small>
+
+						</div>
+
+
+						<a
+							class="button button-primary"
+							href="{{ url_for('main.affiliate_redirect', offer_id=offer.id) }}"
+						>
+							View deal →
+						</a>
+
+					</article>
+
+				{% else %}
+
+					<div class="empty-state">
+						No offers are available yet.
+					</div>
+
+				{% endfor %}
+
+			</div>
+
+
+			<div class="comparison-note">
+
+				<strong>
+					Why can the effective price be lower?
+				</strong>
+
+				Cashback may arrive after payment.
+				Stayfare shows both what you pay now
+				and the final effective cost.
+
+			</div>
+
+		</div>
+
+	</section>
+
+
+	<section class="restaurant-section">
+
+		<div class="container">
+
+			<div class="section-top">
+
+				<div>
+
+					<div class="eyebrow">
+						STAY HERE. EAT HERE.
+					</div>
+
+					<h2>
+						Great food around your stay.
+					</h2>
+
+					<p>
+						Recommendations ranked for quality,
+						travel time, occasion and budget.
+					</p>
+
+				</div>
+
+			</div>
+
+
+			<div class="restaurant-grid">
+
+				{% for restaurant in hotel.restaurants %}
+
+					<article class="restaurant-card">
+
+						<div class="restaurant-visual">
+
+							<span class="travel-time">
+								{{ restaurant.travel_minutes }} min away
+							</span>
+
+							<div class="restaurant-initial">
+								{{ restaurant.name[0] }}
+							</div>
+
+						</div>
+
+
+						<div class="restaurant-content">
+
+							<div class="restaurant-tags">
+
+								<span>
+									{{ restaurant.cuisine }}
+								</span>
+
+								<span>
+									{{ restaurant.occasion }}
+								</span>
+
+							</div>
+
+							<h3>
+								{{ restaurant.name }}
+							</h3>
+
+							<div class="restaurant-footer">
+
+								<div>
+
+									<span class="rating-score">
+										{{ restaurant.rating }}
+									</span>
+
+									<span>
+										Highly rated
+									</span>
+
+								</div>
+
+								<strong>
+									{{ restaurant.price_level }}
+								</strong>
+
+							</div>
+
+						</div>
+
+					</article>
+
+				{% else %}
+
+					<div class="empty-state">
+						Restaurant recommendations are coming soon.
+					</div>
+
+				{% endfor %}
+
+			</div>
+
+		</div>
+
+	</section>
+
+
+	<section class="travel-desk-section">
+
+		<div class="container">
+
+			<div class="travel-desk-card">
+
+				<div>
+
+					<div class="eyebrow">
+						YOUR TRAVEL DESK
+					</div>
+
+					<h2>
+						Interested in this stay?
+					</h2>
+
+					<p>
+						Save it to your shortlist or ask Stayfare
+						to track the price for you.
+					</p>
+
+				</div>
+
+
+				{% if current_user.is_authenticated %}
+
+					<div class="travel-actions">
+
+						<form
+							method="POST"
+							action="{{ url_for('main.save_hotel', hotel_id=hotel.id) }}"
+						>
+
+							<button
+								class="button button-outline large-button"
+								type="submit"
+							>
+								♡ Save hotel
+							</button>
+
+						</form>
+
+
+						<form
+							class="alert-form"
+							method="POST"
+							action="{{ url_for('main.create_alert', hotel_id=hotel.id) }}"
+						>
+
+							<input
+								type="number"
+								name="target_price"
+								placeholder="Target price ₹"
+								min="1"
+							>
+
+							<button
+								class="button button-primary large-button"
+								type="submit"
+							>
+								Track this price
+							</button>
+
+						</form>
+
+					</div>
+
+				{% else %}
+
+					<a
+						class="button button-primary large-button"
+						href="{{ url_for('main.register') }}"
+					>
+						Create free account
+					</a>
+
+				{% endif %}
+
+			</div>
+
+		</div>
+
+	</section>
+
+</main>
+
+{% endblock %}
+
