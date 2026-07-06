@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}
+Aggregation Lab · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main class="dashboard-page">
+
+    <div class="container">
+
+        <div class="dashboard-heading">
+
+            <div class="eyebrow">
+                STAYFARE ENGINE LAB
+            </div>
+
+            <h1>
+                Multi-provider aggregation
+            </h1>
+
+            <p>
+                Searching {{ providers_checked }} providers produced
+                {{ raw_offer_count }} raw offers and
+                {{ results|length }} matched hotels.
+            </p>
+
+        </div>
+
+
+        <div class="comparison-card">
+
+            {% for result in results %}
+
+                <article class="aggregated-hotel">
+
+                    <div class="aggregated-heading">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                {{ result.area }}
+                                ·
+                                {{ result.city }}
+                            </div>
+
+                            <h2>
+                                {{ result.name }}
+                            </h2>
+
+                            <p>
+                                {{ result.provider_count }}
+                                providers matched as the same hotel
+                            </p>
+
+                        </div>
+
+
+                        <div class="aggregated-best">
+
+                            <small>
+                                Best effective price
+                            </small>
+
+                            <strong>
+                                ₹{{ "{:,}".format(
+                                    result.best.effective_price
+                                ) }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="aggregated-offers">
+
+                        {% for offer in result.offers %}
+
+                            <div class="aggregated-offer">
+
+                                <strong>
+                                    {{ offer.provider }}
+                                </strong>
+
+                                <span>
+                                    Listed:
+                                    ₹{{ "{:,}".format(
+                                        offer.listed_price
+                                    ) }}
+                                </span>
+
+                                <span>
+                                    Taxes:
+                                    ₹{{ "{:,}".format(
+                                        offer.taxes
+                                    ) }}
+                                </span>
+
+                                <span>
+                                    Savings:
+                                    ₹{{ "{:,}".format(
+                                        offer.total_saving
+                                    ) }}
+                                </span>
+
+                                <strong>
+                                    Effective:
+                                    ₹{{ "{:,}".format(
+                                        offer.effective_price
+                                    ) }}
+                                </strong>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </article>
+
+            {% else %}
+
+                <div class="empty-state">
+
+                    <h3>
+                        No provider results found.
+                    </h3>
+
+                    <p>
+                        Try New Delhi, Udaipur, or Goa.
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</main>
+
+{% endblock %}

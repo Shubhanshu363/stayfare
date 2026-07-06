@@ -1,12 +1,22 @@
 from flask import Flask
 
-from config import Config
+from config import Config, DevelopmentConfig, TestingConfig, ProductionConfig
 from .extensions import db, login_manager, migrate
 
 
-def create_app():
+def create_app(config_object=None):
     app = Flask(__name__)
-    app.config.from_object(Config)
+
+    if config_object is None:
+        env = app.config.get("ENV", "development")
+        if env == "testing":
+            config_object = TestingConfig
+        elif env == "production":
+            config_object = ProductionConfig
+        else:
+            config_object = DevelopmentConfig
+
+    app.config.from_object(config_object)
 
     db.init_app(app)
     login_manager.init_app(app)

@@ -12,7 +12,7 @@
 
 		<div class="container">
 
-			<a class="back-link" href="{{ url_for('main.home') }}">
+			<a class="back-link" href="{{ url_for('main.search', destination=search.destination, check_in=search.check_in, check_out=search.check_out, adults=search.adults, rooms=search.rooms) }}">
 				← Back to search
 			</a>
 

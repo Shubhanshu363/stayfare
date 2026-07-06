@@ -151,7 +151,13 @@ Hotels in {{ search.destination }} · Stayfare
                     <p>
                         {{ results|length }}
                         stay{% if results|length != 1 %}s{% endif %}
-                        found
+                        found across
+                        {{ providers_checked }}
+                        providers
+
+                        <span class="muted-text">
+                            · {{ provider_status.label }}
+                        </span>
 
                         {% if search.check_in and search.check_out %}
 
@@ -458,7 +464,7 @@ Hotels in {{ search.destination }} · Stayfare
                                     class="result-visual"
                                     href="{{ url_for(
                                         'main.hotel_detail',
-                                        slug=item.hotel.slug,
+                                        slug=item.slug,
                                         destination=search.destination,
                                         check_in=search.check_in,
                                         check_out=search.check_out,
@@ -468,7 +474,7 @@ Hotels in {{ search.destination }} · Stayfare
                                 >
 
                                     <span>
-                                        {{ item.hotel.city }}
+                                        {{ item.city }}
                                     </span>
 
                                 </a>
@@ -477,19 +483,19 @@ Hotels in {{ search.destination }} · Stayfare
                                 <div class="result-info">
 
                                     <div class="result-location">
-                                        {{ item.hotel.area }}
+                                        {{ item.area }}
                                         ·
-                                        {{ item.hotel.city }}
+                                        {{ item.city }}
                                     </div>
 
                                     <h2>
-                                        {{ item.hotel.name }}
+                                        {{ item.name }}
                                     </h2>
 
                                     <div class="result-rating">
 
                                         <span class="rating-score">
-                                            {{ item.hotel.rating }}
+                                            {{ item.rating }}
                                         </span>
 
                                         <strong>
@@ -497,23 +503,33 @@ Hotels in {{ search.destination }} · Stayfare
                                         </strong>
 
                                         <span>
-                                            {{ item.hotel.reviews }}
-                                            reviews
+                                            Best provider:
+                                            {{ item.best.provider }}
+                                        </span>
+
+                                        <span>
+                                            Compared across
+                                            {{ item.provider_count }}
+                                            providers
                                         </span>
 
                                     </div>
 
 
                                     <p>
-                                        {{ item.hotel.description }}
+                                        {{ item.description }}
                                     </p>
 
 
                                     <div class="result-benefits">
 
                                         <span>
-                                            {{ item.offers_count }}
-                                            prices compared
+                                            {{ item.provider_count }}
+                                            providers compared
+                                        </span>
+
+                                        <span>
+                                            {{ item.stars }}-star stay
                                         </span>
 
                                         {% if item.best.breakfast_included %}
@@ -564,7 +580,7 @@ Hotels in {{ search.destination }} · Stayfare
                                         class="button button-primary full-button"
                                         href="{{ url_for(
                                             'main.hotel_detail',
-                                            slug=item.hotel.slug,
+                                            slug=item.slug,
                                             destination=search.destination,
                                             check_in=search.check_in,
                                             check_out=search.check_out,

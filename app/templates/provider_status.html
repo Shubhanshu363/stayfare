@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}
+Provider status · Stayfare
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-page">
+    <div class="container">
+        <div class="dashboard-heading">
+            <div class="eyebrow">OPERATIONS</div>
+            <h1>Provider operating mode</h1>
+            <p>{{ provider_status.label }} — {{ provider_status.detail }}</p>
+        </div>
+    </div>
+</main>
+{% endblock %}

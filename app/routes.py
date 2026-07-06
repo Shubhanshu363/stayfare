@@ -9,6 +9,7 @@ from flask import (
     url_for,
     flash,
     session,
+    current_app,
 )
 
 from flask_login import (
@@ -136,6 +137,31 @@ def validate_search(search):
 
 @main.route("/")
 def home():
+    search_query = request.args.get("q", "").strip()
+
+    if search_query:
+        search_params = {
+            "destination": search_query,
+        }
+
+        for key in ("check_in", "check_out"):
+            value = request.args.get(key, "").strip()
+            if value:
+                search_params[key] = value
+
+        adults = request.args.get("adults", type=int)
+        rooms = request.args.get("rooms", type=int)
+
+        if adults:
+            search_params["adults"] = adults
+
+        if rooms:
+            search_params["rooms"] = rooms
+
+        return redirect(
+            url_for("main.search", **search_params)
+        )
+
     featured_hotels = Hotel.query.limit(3).all()
 
     cards = [
@@ -150,11 +176,35 @@ def home():
         "index.html",
         cards=cards,
         today=date.today().isoformat(),
+        q=search_query,
+    )
+
+
+@main.route("/health")
+def health():
+    return {
+        "status": "ok",
+        "app": "stayfare",
+        "mode": current_app.config.get("PROVIDER_MODE", "DEMO"),
+    }, 200
+
+
+@main.route("/provider-status")
+def provider_status():
+    from .services.provider_status import get_provider_status
+
+    return render_template(
+        "provider_status.html",
+        provider_status=get_provider_status(),
     )
 
 
 @main.route("/search")
 def search():
+    from .services.aggregator import (
+        aggregate_search,
+    )
+
     search_context = get_search_context()
 
     errors = validate_search(
@@ -162,8 +212,12 @@ def search():
     )
 
     if errors:
+
         for error in errors:
-            flash(error, "error")
+            flash(
+                error,
+                "error",
+            )
 
         return redirect(
             url_for("main.home")
@@ -173,130 +227,155 @@ def search():
         search_context
     )
 
-    destination = (
-        search_context["destination"]
+    aggregation = aggregate_search(
+        destination=search_context[
+            "destination"
+        ],
+
+        check_in=search_context[
+            "check_in"
+        ],
+
+        check_out=search_context[
+            "check_out"
+        ],
+
+        adults=search_context[
+            "adults"
+        ],
+
+        rooms=search_context[
+            "rooms"
+        ],
     )
 
-    search_term = f"%{destination}%"
-
-    hotels = Hotel.query.filter(
-        or_(
-            Hotel.city.ilike(search_term),
-            Hotel.state.ilike(search_term),
-            Hotel.name.ilike(search_term),
-            Hotel.area.ilike(search_term),
-        )
-    ).all()
-
-    results = []
-
-    for hotel in hotels:
-        ranked = rank_offers(
-            hotel.offers
-        )
-
-        best = (
-            ranked[0]
-            if ranked
-            else None
-        )
-
-        results.append(
-            {
-                "hotel": hotel,
-                "best": best,
-                "offers_count": len(ranked),
-            }
-        )
+    results = aggregation[
+        "results"
+    ]
 
     max_price = request.args.get(
         "max_price",
-        type=int
+        type=int,
     )
 
     min_rating = request.args.get(
         "min_rating",
-        type=float
+        type=float,
     )
 
     stars = request.args.get(
         "stars",
-        type=int
+        type=int,
     )
 
     if max_price:
+
         results = [
             item
             for item in results
-            if item["best"]
-            and item["best"].effective_price
-            <= max_price
+            if (
+                item["best"]
+                and item[
+                    "best"
+                ].effective_price
+                <= max_price
+            )
         ]
 
     if min_rating:
+
         results = [
             item
             for item in results
-            if item["hotel"].rating
-            >= min_rating
+            if (
+                item["rating"]
+                and item["rating"]
+                >= min_rating
+            )
         ]
 
     if stars:
+
         results = [
             item
             for item in results
-            if item["hotel"].stars
-            == stars
+            if item["stars"] == stars
         ]
 
     sort = request.args.get(
         "sort",
-        "recommended"
+        "recommended",
     )
 
     if sort == "price_low":
+
         results.sort(
             key=lambda item:
-            item["best"].effective_price
-            if item["best"]
-            else float("inf")
+            item[
+                "best"
+            ].effective_price
         )
 
     elif sort == "rating":
+
         results.sort(
             key=lambda item:
-            item["hotel"].rating,
-            reverse=True
+            item["rating"] or 0,
+            reverse=True,
         )
 
     elif sort == "savings":
+
         results.sort(
             key=lambda item:
-            item["best"].total_saving
-            if item["best"]
-            else 0,
-            reverse=True
+            item[
+                "best"
+            ].total_saving,
+            reverse=True,
         )
 
     else:
+
         results.sort(
             key=lambda item: (
-                item["hotel"].rating,
-                -item["best"].effective_price
-                if item["best"]
-                else 0,
+                item["rating"] or 0,
+                -item[
+                    "best"
+                ].effective_price,
             ),
-            reverse=True
+            reverse=True,
         )
+
+    from .services.provider_status import get_provider_status
 
     return render_template(
         "search/results.html",
+
         results=results,
+
         search=search_context,
+
         sort=sort,
+
         max_price=max_price,
+
         min_rating=min_rating,
+
         stars=stars,
+
+        providers_checked=aggregation[
+            "providers_checked"
+        ],
+
+        raw_offer_count=aggregation[
+            "raw_offer_count"
+        ],
+
+        provider_errors=aggregation[
+            "provider_errors"
+        ],
+
+        provider_status=get_provider_status(),
     )
 
 
@@ -305,10 +384,6 @@ def hotel_detail(slug):
     hotel = Hotel.query.filter_by(
         slug=slug
     ).first_or_404()
-
-    offers = rank_offers(
-        hotel.offers
-    )
 
     search_context = {
         "destination": request.args.get(
@@ -354,11 +429,93 @@ def hotel_detail(slug):
         ),
     }
 
+    offers = rank_offers(
+        hotel.offers
+    )
+
+    if search_context["destination"]:
+        from .services.aggregator import (
+            aggregate_search,
+        )
+
+        aggregation = aggregate_search(
+            destination=search_context[
+                "destination"
+            ],
+            check_in=search_context[
+                "check_in"
+            ],
+            check_out=search_context[
+                "check_out"
+            ],
+            adults=search_context[
+                "adults"
+            ],
+            rooms=search_context[
+                "rooms"
+            ],
+        )
+
+        for result in aggregation["results"]:
+            if (
+                result.get("slug") == hotel.slug
+                or result.get("hotel_id") == hotel.id
+                or result.get("name") == hotel.name
+            ):
+                offers = result.get("offers", offers)
+                break
+
     return render_template(
         "hotels/detail.html",
         hotel=hotel,
         offers=offers,
         search=search_context,
+    )
+
+
+@main.route("/aggregation-test")
+def aggregation_test():
+    from .services.aggregator import (
+        aggregate_search,
+    )
+
+    destination = request.args.get(
+        "destination",
+        "New Delhi",
+    ).strip()
+
+    data = aggregate_search(
+        destination=destination,
+        check_in=request.args.get(
+            "check_in"
+        ),
+        check_out=request.args.get(
+            "check_out"
+        ),
+        adults=request.args.get(
+            "adults",
+            2,
+            type=int,
+        ),
+        rooms=request.args.get(
+            "rooms",
+            1,
+            type=int,
+        ),
+    )
+
+    return render_template(
+        "search/aggregator_test.html",
+        results=data["results"],
+        provider_errors=data[
+            "provider_errors"
+        ],
+        providers_checked=data[
+            "providers_checked"
+        ],
+        raw_offer_count=data[
+            "raw_offer_count"
+        ],
     )
 
 
@@ -611,50 +768,82 @@ def admin():
     )
 
 
-@main.route("/go/<int:offer_id>")
+@main.route("/go/<offer_id>")
 def affiliate_redirect(offer_id):
-    offer = db.session.get(
-        Offer,
-        offer_id
-    )
-
-    if not offer:
-        return redirect(
-            url_for("main.home")
+    if str(offer_id).isdigit():
+        offer = db.session.get(
+            Offer,
+            int(offer_id)
         )
 
-    click = AffiliateClick(
-        hotel_id=offer.hotel_id,
-        provider=offer.provider,
-    )
-
-    db.session.add(click)
-    db.session.commit()
-
-    if (
-        offer.affiliate_url
-        and offer.affiliate_url != "/"
-    ):
-        parsed = urlparse(
-            offer.affiliate_url
-        )
-
-        if parsed.scheme in (
-            "http",
-            "https",
-        ):
+        if not offer:
             return redirect(
+                url_for("main.home")
+            )
+
+        click = AffiliateClick(
+            hotel_id=offer.hotel_id,
+            provider=offer.provider,
+        )
+
+        db.session.add(click)
+        db.session.commit()
+
+        if (
+            offer.affiliate_url
+            and offer.affiliate_url != "/"
+        ):
+            parsed = urlparse(
                 offer.affiliate_url
             )
 
-    flash(
-        "Demo mode: the real booking partner will open here.",
-        "info",
-    )
+            if parsed.scheme in (
+                "http",
+                "https",
+            ):
+                return redirect(
+                    offer.affiliate_url
+                )
+
+        flash(
+            "Demo mode: the real booking partner will open here.",
+            "info",
+        )
+
+        return redirect(
+            url_for(
+                "main.hotel_detail",
+                slug=offer.hotel.slug,
+            )
+        )
+
+    parts = str(offer_id).split("|")
+    if len(parts) >= 3:
+        provider = parts[0]
+        hotel_id = int(parts[1]) if parts[1].isdigit() else None
+        hotel_slug = parts[2] if parts[2] else None
+
+        if hotel_id is not None:
+            click = AffiliateClick(
+                hotel_id=hotel_id,
+                provider=provider,
+            )
+            db.session.add(click)
+            db.session.commit()
+
+        flash(
+            "Demo mode: the real booking partner will open here.",
+            "info",
+        )
+
+        if hotel_slug:
+            return redirect(
+                url_for(
+                    "main.hotel_detail",
+                    slug=hotel_slug,
+                )
+            )
 
     return redirect(
-        url_for(
-            "main.hotel_detail",
-            slug=offer.hotel.slug,
-        )
+        url_for("main.home")
     )
