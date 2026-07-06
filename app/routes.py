@@ -1,3 +1,6 @@
+from datetime import date, datetime
+from urllib.parse import urlparse
+
 from flask import (
     Blueprint,
     render_template,
@@ -5,6 +8,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    session,
 )
 
 from flask_login import (
@@ -17,7 +21,6 @@ from flask_login import (
 from sqlalchemy import or_
 
 from .extensions import db
-
 from .models import (
     User,
     Hotel,
@@ -25,65 +28,280 @@ from .models import (
     PriceAlert,
     AffiliateClick,
 )
-
 from .services.deal_engine import (
     rank_offers,
     best_offer,
 )
 
 
-main = Blueprint(
-    "main",
-    __name__
-)
+main = Blueprint("main", __name__)
+
+
+def parse_date(value):
+    if not value:
+        return None
+
+    try:
+        return datetime.strptime(
+            value,
+            "%Y-%m-%d"
+        ).date()
+    except ValueError:
+        return None
+
+
+def get_search_context():
+    return {
+        "destination": request.args.get(
+            "destination",
+            session.get("destination", "")
+        ).strip(),
+
+        "check_in": request.args.get(
+            "check_in",
+            session.get("check_in", "")
+        ),
+
+        "check_out": request.args.get(
+            "check_out",
+            session.get("check_out", "")
+        ),
+
+        "adults": request.args.get(
+            "adults",
+            session.get("adults", 2),
+            type=int
+        ) or 2,
+
+        "rooms": request.args.get(
+            "rooms",
+            session.get("rooms", 1),
+            type=int
+        ) or 1,
+    }
+
+
+def save_search_context(search):
+    for key, value in search.items():
+        session[key] = value
+
+
+def validate_search(search):
+    errors = []
+
+    if not search["destination"]:
+        errors.append(
+            "Please enter a destination, area, or hotel."
+        )
+
+    check_in = parse_date(
+        search["check_in"]
+    )
+
+    check_out = parse_date(
+        search["check_out"]
+    )
+
+    if search["check_in"] and not check_in:
+        errors.append(
+            "Please enter a valid check-in date."
+        )
+
+    if search["check_out"] and not check_out:
+        errors.append(
+            "Please enter a valid check-out date."
+        )
+
+    if (
+        check_in
+        and check_out
+        and check_out <= check_in
+    ):
+        errors.append(
+            "Check-out must be after check-in."
+        )
+
+    if search["adults"] < 1:
+        errors.append(
+            "At least one guest is required."
+        )
+
+    if search["rooms"] < 1:
+        errors.append(
+            "At least one room is required."
+        )
+
+    return errors
 
 
 @main.route("/")
 def home():
+    featured_hotels = Hotel.query.limit(3).all()
 
-    q = request.args.get(
-        "q",
-        ""
-    ).strip()
-
-    query = Hotel.query
-
-    if q:
-        search = f"%{q}%"
-
-        query = query.filter(
-            or_(
-                Hotel.city.ilike(search),
-                Hotel.state.ilike(search),
-                Hotel.name.ilike(search),
-                Hotel.area.ilike(search),
-            )
-        )
-
-    hotels = query.all()
-
-    cards = []
-
-    for hotel in hotels:
-        cards.append(
-            {
-                "hotel": hotel,
-                "best": best_offer(
-                    hotel.offers
-                ),
-            }
-        )
+    cards = [
+        {
+            "hotel": hotel,
+            "best": best_offer(hotel.offers),
+        }
+        for hotel in featured_hotels
+    ]
 
     return render_template(
         "index.html",
         cards=cards,
-        q=q,
+        today=date.today().isoformat(),
+    )
+
+
+@main.route("/search")
+def search():
+    search_context = get_search_context()
+
+    errors = validate_search(
+        search_context
+    )
+
+    if errors:
+        for error in errors:
+            flash(error, "error")
+
+        return redirect(
+            url_for("main.home")
+        )
+
+    save_search_context(
+        search_context
+    )
+
+    destination = (
+        search_context["destination"]
+    )
+
+    search_term = f"%{destination}%"
+
+    hotels = Hotel.query.filter(
+        or_(
+            Hotel.city.ilike(search_term),
+            Hotel.state.ilike(search_term),
+            Hotel.name.ilike(search_term),
+            Hotel.area.ilike(search_term),
+        )
+    ).all()
+
+    results = []
+
+    for hotel in hotels:
+        ranked = rank_offers(
+            hotel.offers
+        )
+
+        best = (
+            ranked[0]
+            if ranked
+            else None
+        )
+
+        results.append(
+            {
+                "hotel": hotel,
+                "best": best,
+                "offers_count": len(ranked),
+            }
+        )
+
+    max_price = request.args.get(
+        "max_price",
+        type=int
+    )
+
+    min_rating = request.args.get(
+        "min_rating",
+        type=float
+    )
+
+    stars = request.args.get(
+        "stars",
+        type=int
+    )
+
+    if max_price:
+        results = [
+            item
+            for item in results
+            if item["best"]
+            and item["best"].effective_price
+            <= max_price
+        ]
+
+    if min_rating:
+        results = [
+            item
+            for item in results
+            if item["hotel"].rating
+            >= min_rating
+        ]
+
+    if stars:
+        results = [
+            item
+            for item in results
+            if item["hotel"].stars
+            == stars
+        ]
+
+    sort = request.args.get(
+        "sort",
+        "recommended"
+    )
+
+    if sort == "price_low":
+        results.sort(
+            key=lambda item:
+            item["best"].effective_price
+            if item["best"]
+            else float("inf")
+        )
+
+    elif sort == "rating":
+        results.sort(
+            key=lambda item:
+            item["hotel"].rating,
+            reverse=True
+        )
+
+    elif sort == "savings":
+        results.sort(
+            key=lambda item:
+            item["best"].total_saving
+            if item["best"]
+            else 0,
+            reverse=True
+        )
+
+    else:
+        results.sort(
+            key=lambda item: (
+                item["hotel"].rating,
+                -item["best"].effective_price
+                if item["best"]
+                else 0,
+            ),
+            reverse=True
+        )
+
+    return render_template(
+        "search/results.html",
+        results=results,
+        search=search_context,
+        sort=sort,
+        max_price=max_price,
+        min_rating=min_rating,
+        stars=stars,
     )
 
 
 @main.route("/hotel/<slug>")
 def hotel_detail(slug):
-
     hotel = Hotel.query.filter_by(
         slug=slug
     ).first_or_404()
@@ -92,10 +310,55 @@ def hotel_detail(slug):
         hotel.offers
     )
 
+    search_context = {
+        "destination": request.args.get(
+            "destination",
+            session.get(
+                "destination",
+                hotel.city
+            )
+        ),
+
+        "check_in": request.args.get(
+            "check_in",
+            session.get(
+                "check_in",
+                ""
+            )
+        ),
+
+        "check_out": request.args.get(
+            "check_out",
+            session.get(
+                "check_out",
+                ""
+            )
+        ),
+
+        "adults": request.args.get(
+            "adults",
+            session.get(
+                "adults",
+                2
+            ),
+            type=int
+        ),
+
+        "rooms": request.args.get(
+            "rooms",
+            session.get(
+                "rooms",
+                1
+            ),
+            type=int
+        ),
+    }
+
     return render_template(
         "hotels/detail.html",
         hotel=hotel,
         offers=offers,
+        search=search_context,
     )
 
 
@@ -104,14 +367,12 @@ def hotel_detail(slug):
     methods=["GET", "POST"]
 )
 def register():
-
     if current_user.is_authenticated:
         return redirect(
             url_for("main.dashboard")
         )
 
     if request.method == "POST":
-
         name = request.form[
             "name"
         ].strip()
@@ -131,6 +392,16 @@ def register():
         if existing:
             flash(
                 "An account with that email already exists.",
+                "error",
+            )
+
+            return redirect(
+                url_for("main.register")
+            )
+
+        if len(password) < 8:
+            flash(
+                "Password must be at least 8 characters.",
                 "error",
             )
 
@@ -164,14 +435,12 @@ def register():
     methods=["GET", "POST"]
 )
 def login():
-
     if current_user.is_authenticated:
         return redirect(
             url_for("main.dashboard")
         )
 
     if request.method == "POST":
-
         email = request.form[
             "email"
         ].lower().strip()
@@ -207,7 +476,6 @@ def login():
 @main.route("/logout")
 @login_required
 def logout():
-
     logout_user()
 
     return redirect(
@@ -221,7 +489,6 @@ def logout():
 )
 @login_required
 def save_hotel(hotel_id):
-
     hotel = db.session.get(
         Hotel,
         hotel_id
@@ -231,12 +498,21 @@ def save_hotel(hotel_id):
         hotel
         and hotel not in current_user.saved
     ):
-        current_user.saved.append(hotel)
+        current_user.saved.append(
+            hotel
+        )
+
         db.session.commit()
 
         flash(
             "Hotel saved to your shortlist.",
             "success",
+        )
+
+    else:
+        flash(
+            "This hotel is already in your shortlist.",
+            "info",
         )
 
     return redirect(
@@ -251,7 +527,6 @@ def save_hotel(hotel_id):
 )
 @login_required
 def create_alert(hotel_id):
-
     hotel = db.session.get(
         Hotel,
         hotel_id
@@ -267,19 +542,37 @@ def create_alert(hotel_id):
         type=int
     )
 
-    alert = PriceAlert(
+    existing = PriceAlert.query.filter_by(
         user_id=current_user.id,
         hotel_id=hotel_id,
-        target_price=target_price,
-    )
+        active=True,
+    ).first()
 
-    db.session.add(alert)
+    if existing:
+        existing.target_price = (
+            target_price
+        )
+
+        flash(
+            "Your existing price alert was updated.",
+            "success",
+        )
+
+    else:
+        alert = PriceAlert(
+            user_id=current_user.id,
+            hotel_id=hotel_id,
+            target_price=target_price,
+        )
+
+        db.session.add(alert)
+
+        flash(
+            "Price alert created.",
+            "success",
+        )
+
     db.session.commit()
-
-    flash(
-        "Price alert created.",
-        "success",
-    )
 
     return redirect(
         url_for("main.dashboard")
@@ -289,7 +582,6 @@ def create_alert(hotel_id):
 @main.route("/dashboard")
 @login_required
 def dashboard():
-
     return render_template(
         "dashboard/index.html",
         saved=current_user.saved,
@@ -300,9 +592,7 @@ def dashboard():
 @main.route("/admin")
 @login_required
 def admin():
-
     if not current_user.is_admin:
-
         flash(
             "Admin access required.",
             "error",
@@ -323,7 +613,6 @@ def admin():
 
 @main.route("/go/<int:offer_id>")
 def affiliate_redirect(offer_id):
-
     offer = db.session.get(
         Offer,
         offer_id
@@ -346,12 +635,20 @@ def affiliate_redirect(offer_id):
         offer.affiliate_url
         and offer.affiliate_url != "/"
     ):
-        return redirect(
+        parsed = urlparse(
             offer.affiliate_url
         )
 
+        if parsed.scheme in (
+            "http",
+            "https",
+        ):
+            return redirect(
+                offer.affiliate_url
+            )
+
     flash(
-        "Demo mode: a real provider link will be connected here.",
+        "Demo mode: the real booking partner will open here.",
         "info",
     )
 

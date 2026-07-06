@@ -1,0 +1,611 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+Hotels in {{ search.destination }} · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main class="results-page">
+
+    <section class="results-search-bar">
+
+        <div class="container">
+
+            <form
+                class="compact-search"
+                method="GET"
+                action="{{ url_for('main.search') }}"
+            >
+
+                <div class="compact-field destination-field">
+
+                    <label>
+                        Destination
+                    </label>
+
+                    <input
+                        name="destination"
+                        value="{{ search.destination }}"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="compact-field">
+
+                    <label>
+                        Check in
+                    </label>
+
+                    <input
+                        type="date"
+                        name="check_in"
+                        value="{{ search.check_in }}"
+                    >
+
+                </div>
+
+
+                <div class="compact-field">
+
+                    <label>
+                        Check out
+                    </label>
+
+                    <input
+                        type="date"
+                        name="check_out"
+                        value="{{ search.check_out }}"
+                    >
+
+                </div>
+
+
+                <div class="compact-field">
+
+                    <label>
+                        Guests
+                    </label>
+
+                    <select name="adults">
+
+                        {% for number in range(1, 9) %}
+
+                            <option
+                                value="{{ number }}"
+                                {% if search.adults == number %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ number }}
+                                adult{% if number != 1 %}s{% endif %}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="compact-field">
+
+                    <label>
+                        Rooms
+                    </label>
+
+                    <select name="rooms">
+
+                        {% for number in range(1, 6) %}
+
+                            <option
+                                value="{{ number }}"
+                                {% if search.rooms == number %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ number }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <button
+                    class="button button-primary"
+                    type="submit"
+                >
+                    Update search
+                </button>
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+    <section class="results-content">
+
+        <div class="container">
+
+            <div class="results-heading">
+
+                <div>
+
+                    <div class="eyebrow">
+                        HOTEL DEALS
+                    </div>
+
+                    <h1>
+                        Best stays in
+                        {{ search.destination }}
+                    </h1>
+
+                    <p>
+                        {{ results|length }}
+                        stay{% if results|length != 1 %}s{% endif %}
+                        found
+
+                        {% if search.check_in and search.check_out %}
+
+                            · {{ search.check_in }}
+                            to {{ search.check_out }}
+
+                        {% endif %}
+
+                        · {{ search.adults }}
+                        guest{% if search.adults != 1 %}s{% endif %}
+
+                        · {{ search.rooms }}
+                        room{% if search.rooms != 1 %}s{% endif %}
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="results-layout">
+
+                <aside class="filters-card">
+
+                    <div class="filter-heading">
+
+                        <h3>
+                            Filter stays
+                        </h3>
+
+                        <a
+                            href="{{ url_for(
+                                'main.search',
+                                destination=search.destination,
+                                check_in=search.check_in,
+                                check_out=search.check_out,
+                                adults=search.adults,
+                                rooms=search.rooms
+                            ) }}"
+                        >
+                            Reset
+                        </a>
+
+                    </div>
+
+
+                    <form
+                        method="GET"
+                        action="{{ url_for('main.search') }}"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="destination"
+                            value="{{ search.destination }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="check_in"
+                            value="{{ search.check_in }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="check_out"
+                            value="{{ search.check_out }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="adults"
+                            value="{{ search.adults }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="rooms"
+                            value="{{ search.rooms }}"
+                        >
+
+
+                        <div class="filter-group">
+
+                            <label>
+                                Maximum effective price
+                            </label>
+
+                            <select name="max_price">
+
+                                <option value="">
+                                    Any price
+                                </option>
+
+                                {% for price in [
+                                    10000,
+                                    15000,
+                                    20000,
+                                    30000
+                                ] %}
+
+                                    <option
+                                        value="{{ price }}"
+                                        {% if max_price == price %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        Up to ₹{{ "{:,}".format(price) }}
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="filter-group">
+
+                            <label>
+                                Minimum guest rating
+                            </label>
+
+                            <select name="min_rating">
+
+                                <option value="">
+                                    Any rating
+                                </option>
+
+                                <option
+                                    value="4.5"
+                                    {% if min_rating == 4.5 %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    4.5 and above
+                                </option>
+
+                                <option
+                                    value="4.7"
+                                    {% if min_rating == 4.7 %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    4.7 and above
+                                </option>
+
+                                <option
+                                    value="4.8"
+                                    {% if min_rating == 4.8 %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    4.8 and above
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="filter-group">
+
+                            <label>
+                                Hotel class
+                            </label>
+
+                            <select name="stars">
+
+                                <option value="">
+                                    Any class
+                                </option>
+
+                                {% for number in range(3, 6) %}
+
+                                    <option
+                                        value="{{ number }}"
+                                        {% if stars == number %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ number }} stars
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+
+                        <button
+                            class="button button-primary full-button"
+                            type="submit"
+                        >
+                            Apply filters
+                        </button>
+
+                    </form>
+
+                </aside>
+
+
+                <div class="results-main">
+
+                    <div class="results-toolbar">
+
+                        <span>
+                            Showing {{ results|length }} results
+                        </span>
+
+
+                        <form
+                            method="GET"
+                            action="{{ url_for('main.search') }}"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="destination"
+                                value="{{ search.destination }}"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="check_in"
+                                value="{{ search.check_in }}"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="check_out"
+                                value="{{ search.check_out }}"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="adults"
+                                value="{{ search.adults }}"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="rooms"
+                                value="{{ search.rooms }}"
+                            >
+
+
+                            <select
+                                name="sort"
+                                onchange="this.form.submit()"
+                            >
+
+                                <option
+                                    value="recommended"
+                                    {% if sort == "recommended" %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    Recommended
+                                </option>
+
+                                <option
+                                    value="price_low"
+                                    {% if sort == "price_low" %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    Lowest price
+                                </option>
+
+                                <option
+                                    value="rating"
+                                    {% if sort == "rating" %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    Highest rating
+                                </option>
+
+                                <option
+                                    value="savings"
+                                    {% if sort == "savings" %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    Biggest saving
+                                </option>
+
+                            </select>
+
+                        </form>
+
+                    </div>
+
+
+                    <div class="results-list">
+
+                        {% for item in results %}
+
+                            <article class="result-card">
+
+                                <a
+                                    class="result-visual"
+                                    href="{{ url_for(
+                                        'main.hotel_detail',
+                                        slug=item.hotel.slug,
+                                        destination=search.destination,
+                                        check_in=search.check_in,
+                                        check_out=search.check_out,
+                                        adults=search.adults,
+                                        rooms=search.rooms
+                                    ) }}"
+                                >
+
+                                    <span>
+                                        {{ item.hotel.city }}
+                                    </span>
+
+                                </a>
+
+
+                                <div class="result-info">
+
+                                    <div class="result-location">
+                                        {{ item.hotel.area }}
+                                        ·
+                                        {{ item.hotel.city }}
+                                    </div>
+
+                                    <h2>
+                                        {{ item.hotel.name }}
+                                    </h2>
+
+                                    <div class="result-rating">
+
+                                        <span class="rating-score">
+                                            {{ item.hotel.rating }}
+                                        </span>
+
+                                        <strong>
+                                            Excellent
+                                        </strong>
+
+                                        <span>
+                                            {{ item.hotel.reviews }}
+                                            reviews
+                                        </span>
+
+                                    </div>
+
+
+                                    <p>
+                                        {{ item.hotel.description }}
+                                    </p>
+
+
+                                    <div class="result-benefits">
+
+                                        <span>
+                                            {{ item.offers_count }}
+                                            prices compared
+                                        </span>
+
+                                        {% if item.best.breakfast_included %}
+
+                                            <span>
+                                                Breakfast included
+                                            </span>
+
+                                        {% endif %}
+
+                                        <span>
+                                            {{ item.best.cancellation }}
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="result-deal">
+
+                                    {% if item.best.total_saving > 0 %}
+
+                                        <span class="saving-pill">
+                                            Save ₹{{ "{:,}".format(
+                                                item.best.total_saving
+                                            ) }}
+                                        </span>
+
+                                    {% endif %}
+
+                                    <small>
+                                        Best effective price
+                                    </small>
+
+                                    <strong>
+                                        ₹{{ "{:,}".format(
+                                            item.best.effective_price
+                                        ) }}
+                                    </strong>
+
+                                    <span>
+                                        per night
+                                    </span>
+
+
+                                    <a
+                                        class="button button-primary full-button"
+                                        href="{{ url_for(
+                                            'main.hotel_detail',
+                                            slug=item.hotel.slug,
+                                            destination=search.destination,
+                                            check_in=search.check_in,
+                                            check_out=search.check_out,
+                                            adults=search.adults,
+                                            rooms=search.rooms
+                                        ) }}"
+                                    >
+                                        Compare deals
+                                    </a>
+
+                                </div>
+
+                            </article>
+
+                        {% else %}
+
+                            <div class="empty-state">
+
+                                <h3>
+                                    No stays match these filters.
+                                </h3>
+
+                                <p>
+                                    Try changing your price,
+                                    rating, or destination filters.
+                                </p>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+{% endblock %}
