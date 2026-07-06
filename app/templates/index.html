@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero">
+
+    <div class="container">
+
+        <div class="eyebrow">
+            India's hotel deal intelligence
+        </div>
+
+        <h1>
+            One search.
+            Every deal.
+            <em>The price you actually pay.</em>
+        </h1>
+
+        <p class="hero-description">
+            Compare hotel prices, discounts and cashback
+            to discover the real cheapest deal.
+            Then find the best restaurants around your stay.
+        </p>
+
+
+        <form
+            class="search-box"
+            method="GET"
+            action="{{ url_for('main.home') }}"
+        >
+
+            <div class="search-field search-destination">
+
+                <label>
+                    WHERE DO YOU WANT TO STAY?
+                </label>
+
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ q }}"
+                    placeholder="City, area or hotel"
+                >
+
+            </div>
+
+
+            <div class="search-field">
+
+                <label>
+                    CHECK IN
+                </label>
+
+                <input
+                    type="date"
+                    name="check_in"
+                >
+
+            </div>
+
+
+            <div class="search-field">
+
+                <label>
+                    CHECK OUT
+                </label>
+
+                <input
+                    type="date"
+                    name="check_out"
+                >
+
+            </div>
+
+
+            <button
+                class="button button-primary search-button"
+                type="submit"
+            >
+                Find best deal
+            </button>
+
+        </form>
+
+
+        <div class="trust-row">
+
+            <span>✓ Compare multiple providers</span>
+
+            <span>✓ Calculate real final prices</span>
+
+            <span>✓ Find restaurants nearby</span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="how-it-works">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div class="eyebrow">
+                WHY STAYFARE?
+            </div>
+
+            <h2>
+                A smarter way to choose where you stay.
+            </h2>
+
+        </div>
+
+
+        <div class="feature-grid">
+
+            <article class="feature-card">
+
+                <div class="feature-number">
+                    01
+                </div>
+
+                <h3>
+                    Compare the same stay
+                </h3>
+
+                <p>
+                    We compare offers across providers
+                    instead of making you open ten different tabs.
+                </p>
+
+            </article>
+
+
+            <article class="feature-card">
+
+                <div class="feature-number">
+                    02
+                </div>
+
+                <h3>
+                    See the real price
+                </h3>
+
+                <p>
+                    Discounts, taxes and cashback are calculated
+                    before we rank the cheapest deal.
+                </p>
+
+            </article>
+
+
+            <article class="feature-card">
+
+                <div class="feature-number">
+                    03
+                </div>
+
+                <h3>
+                    Stay here. Eat here.
+                </h3>
+
+                <p>
+                    Discover restaurants matched to your location,
+                    budget and reason for travelling.
+                </p>
+
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="hotel-section">
+
+    <div class="container">
+
+        <div class="hotel-section-header">
+
+            <div>
+
+                <div class="eyebrow">
+                    {% if q %}
+                        SEARCH RESULTS
+                    {% else %}
+                        TRENDING STAYS
+                    {% endif %}
+                </div>
+
+                <h2>
+                    {% if q %}
+                        Best matches for "{{ q }}"
+                    {% else %}
+                        Worth checking right now
+                    {% endif %}
+                </h2>
+
+            </div>
+
+            <div class="result-count">
+                {{ cards|length }} stays found
+            </div>
+
+        </div>
+
+
+        <div class="hotel-grid">
+
+            {% for item in cards %}
+
+                <a
+                    class="hotel-card"
+                    href="{{ url_for('main.hotel_detail', slug=item.hotel.slug) }}"
+                >
+
+                    <div class="hotel-image">
+
+                        <div class="hotel-city">
+                            {{ item.hotel.city }}
+                        </div>
+
+                        <div class="hotel-badge">
+                            Best deal found
+                        </div>
+
+                    </div>
+
+
+                    <div class="hotel-content">
+
+                        <div class="hotel-location">
+
+                            {{ item.hotel.area }}
+                            ·
+                            {{ item.hotel.city }}
+
+                        </div>
+
+                        <h3>
+                            {{ item.hotel.name }}
+                        </h3>
+
+                        <div class="rating">
+
+                            <span class="rating-score">
+                                {{ item.hotel.rating }}
+                            </span>
+
+                            <span>
+                                Excellent
+                            </span>
+
+                            <span class="reviews">
+                                {{ item.hotel.reviews }} reviews
+                            </span>
+
+                        </div>
+
+
+                        {% if item.best %}
+
+                            <div class="price-area">
+
+                                <div>
+
+                                    <div class="price-label">
+                                        Best effective price
+                                    </div>
+
+                                    <div class="hotel-price">
+
+                                        ₹{{ "{:,}".format(
+                                            item.best.effective_price
+                                        ) }}
+
+                                    </div>
+
+                                    <div class="price-note">
+                                        per night
+                                    </div>
+
+                                </div>
+
+
+                                <div class="compare-link">
+                                    Compare deals →
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </a>
+
+            {% else %}
+
+                <div class="empty-state">
+
+                    <h3>
+                        We couldn't find that stay yet.
+                    </h3>
+
+                    <p>
+                        Try searching for New Delhi,
+                        Udaipur or Goa.
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

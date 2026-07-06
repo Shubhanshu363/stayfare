@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}
+Sign in · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main class="auth-page">
+
+    <div class="auth-card">
+
+        <div class="eyebrow">
+            WELCOME BACK
+        </div>
+
+        <h1>
+            Sign in to your travel desk.
+        </h1>
+
+        <p>
+            Access your saved hotels and price alerts.
+        </p>
+
+
+        <form method="POST" class="auth-form">
+
+            <label>
+                Email address
+
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                >
+            </label>
+
+
+            <label>
+                Password
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Your password"
+                    required
+                >
+            </label>
+
+
+            <button
+                class="button button-primary"
+                type="submit"
+            >
+                Sign in
+            </button>
+
+        </form>
+
+
+        <div class="auth-footer">
+
+            New to Stayfare?
+
+            <a href="{{ url_for('main.register') }}">
+                Create an account
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+{% endblock %}

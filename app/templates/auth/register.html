@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}
+Create account · Stayfare
+{% endblock %}
+
+{% block content %}
+
+<main class="auth-page">
+
+    <div class="auth-card">
+
+        <div class="eyebrow">
+            YOUR TRAVEL DESK
+        </div>
+
+        <h1>
+            Save better stays.
+            Track better prices.
+        </h1>
+
+        <p>
+            Create a free account to save hotels
+            and track price drops.
+        </p>
+
+
+        <form method="POST" class="auth-form">
+
+            <label>
+                Your name
+
+                <input
+                    type="text"
+                    name="name"
+                    placeholder="Your name"
+                    required
+                >
+            </label>
+
+
+            <label>
+                Email address
+
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                >
+            </label>
+
+
+            <label>
+                Password
+
+                <input
+                    type="password"
+                    name="password"
+                    minlength="8"
+                    placeholder="At least 8 characters"
+                    required
+                >
+            </label>
+
+
+            <button
+                class="button button-primary"
+                type="submit"
+            >
+                Join Stayfare
+            </button>
+
+        </form>
+
+
+        <div class="auth-footer">
+
+            Already have an account?
+
+            <a href="{{ url_for('main.login') }}">
+                Sign in
+            </a>
+
+        </div>
+
+    </div>
+
+</main>
+
+{% endblock %}

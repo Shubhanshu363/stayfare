@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}
+        Stayfare — Find the real best hotel deal
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+
+        <a
+            href="{{ url_for('main.home') }}"
+            class="brand"
+        >
+            Stay<span>fare</span>
+        </a>
+
+        <div class="nav-links">
+
+            <a href="{{ url_for('main.home') }}">
+                Explore
+            </a>
+
+            {% if current_user.is_authenticated %}
+
+                <a href="{{ url_for('main.dashboard') }}">
+                    Saved & Alerts
+                </a>
+
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('main.admin') }}">
+                        Admin
+                    </a>
+                {% endif %}
+
+                <a
+                    class="button button-outline"
+                    href="{{ url_for('main.logout') }}"
+                >
+                    Log out
+                </a>
+
+            {% else %}
+
+                <a href="{{ url_for('main.login') }}">
+                    Sign in
+                </a>
+
+                <a
+                    class="button button-primary"
+                    href="{{ url_for('main.register') }}"
+                >
+                    Join free
+                </a>
+
+            {% endif %}
+
+        </div>
+    </div>
+</nav>
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% if messages %}
+
+        <div class="container flash-container">
+
+            {% for category, message in messages %}
+
+                <div class="flash flash-{{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+{% endwith %}
+
+
+{% block content %}
+{% endblock %}
+
+
+<footer class="footer">
+
+    <div class="container footer-content">
+
+        <div>
+            <div class="brand footer-brand">
+                Stay<span>fare</span>
+            </div>
+
+            <p>
+                Find the real price of a better stay.
+            </p>
+        </div>
+
+        <div>
+            Built for smarter travel in India 🇮🇳
+        </div>
+
+    </div>
+
+</footer>
+
+</body>
+</html>
