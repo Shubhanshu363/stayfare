@@ -1,8 +1,8 @@
 from flask import current_app
 
 
-def get_provider_status():
-    mode = str(current_app.config.get("PROVIDER_MODE", "DEMO")).upper()
+def get_provider_status(mode=None):
+    mode = str(mode or current_app.config.get("PROVIDER_MODE", "DEMO")).upper()
 
     if mode == "LIVE":
         label = "Live inventory"

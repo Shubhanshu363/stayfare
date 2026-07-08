@@ -74,7 +74,7 @@
 						</div>
 
 						<div class="summary-note">
-							per night after eligible savings
+							full stay price after verified savings
 						</div>
 
 						{% if offers[0].total_saving > 0 %}
@@ -120,7 +120,7 @@
 				</div>
 
 				<div class="price-explainer">
-					Listed price + taxes − discount − cashback
+					Base stay price + taxes + mandatory fees − verified savings
 				</div>
 
 			</div>
@@ -228,8 +228,9 @@
 								Effective price
 							</span>
 
-							<strong>
-								₹{{ "{:,}".format(offer.effective_price) }}
+								<small>
+									Pay now ₹{{ "{:,}".format(offer.payable_now) }}
+								</small>
 							</strong>
 
 							<small>

@@ -122,6 +122,10 @@ class Hotel(db.Model):
         db.String(180)
     )
 
+    canonical_slug = db.Column(
+        db.String(180)
+    )
+
     stars = db.Column(
         db.Integer,
         default=5
@@ -188,7 +192,22 @@ class Offer(db.Model):
         default=0
     )
 
+    mandatory_fees = db.Column(
+        db.Integer,
+        default=0
+    )
+
     discount = db.Column(
+        db.Integer,
+        default=0
+    )
+
+    verified_coupon_discount = db.Column(
+        db.Integer,
+        default=0
+    )
+
+    verified_payment_offer = db.Column(
         db.Integer,
         default=0
     )
@@ -213,6 +232,33 @@ class Offer(db.Model):
         default="/"
     )
 
+    provider_hotel_id = db.Column(
+        db.String(255)
+    )
+
+    currency = db.Column(
+        db.String(20),
+        default="INR"
+    )
+
+    room_fingerprint = db.Column(
+        db.Text
+    )
+
+    comparison_group = db.Column(
+        db.String(80),
+        default="EXACT OR HIGHLY COMPARABLE"
+    )
+
+    @property
+    def total_stay_price(self):
+        return max(
+            0,
+            self.listed_price
+            + self.taxes
+            + self.mandatory_fees
+        )
+
     @property
     def payable_now(self):
         return max(
@@ -234,6 +280,8 @@ class Offer(db.Model):
     def total_saving(self):
         return (
             self.discount
+            + self.verified_coupon_discount
+            + self.verified_payment_offer
             + self.cashback
         )
 
@@ -298,6 +346,41 @@ class PriceAlert(db.Model):
         db.Integer
     )
 
+    check_in = db.Column(
+        db.Date
+    )
+
+    check_out = db.Column(
+        db.Date
+    )
+
+    adults = db.Column(
+        db.Integer,
+        default=2
+    )
+
+    rooms = db.Column(
+        db.Integer,
+        default=1
+    )
+
+    baseline_price = db.Column(
+        db.Integer
+    )
+
+    latest_price = db.Column(
+        db.Integer
+    )
+
+    lowest_observed_price = db.Column(
+        db.Integer
+    )
+
+    currency = db.Column(
+        db.String(20),
+        default="INR"
+    )
+
     active = db.Column(
         db.Boolean,
         default=True
@@ -306,6 +389,70 @@ class PriceAlert(db.Model):
     created_at = db.Column(
         db.DateTime,
         default=datetime.utcnow
+    )
+
+    last_checked = db.Column(
+        db.DateTime
+    )
+
+    hotel = db.relationship("Hotel")
+
+
+class PriceObservation(db.Model):
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    hotel_id = db.Column(
+        db.Integer,
+        db.ForeignKey("hotel.id"),
+        nullable=False
+    )
+
+    provider = db.Column(
+        db.String(120)
+    )
+
+    room_fingerprint = db.Column(
+        db.String(255)
+    )
+
+    payable_price = db.Column(
+        db.Integer
+    )
+
+    effective_price = db.Column(
+        db.Integer
+    )
+
+    currency = db.Column(
+        db.String(20),
+        default="INR"
+    )
+
+    check_in = db.Column(
+        db.Date
+    )
+
+    check_out = db.Column(
+        db.Date
+    )
+
+    adults = db.Column(
+        db.Integer,
+        default=2
+    )
+
+    rooms = db.Column(
+        db.Integer,
+        default=1
+    )
+
+    observed_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
     )
 
     hotel = db.relationship("Hotel")

@@ -354,6 +354,9 @@ def search():
         results=results,
 
         search=search_context,
+        resolved_destination=aggregation.get("resolved_destination"),
+        provider_attempts=aggregation.get("provider_attempts", []),
+        provider_registry=aggregation.get("provider_registry", {}),
 
         sort=sort,
 
@@ -375,7 +378,7 @@ def search():
             "provider_errors"
         ],
 
-        provider_status=get_provider_status(),
+        provider_status=get_provider_status(aggregation.get("provider_mode")),
     )
 
 
@@ -699,6 +702,12 @@ def create_alert(hotel_id):
         type=int
     )
 
+    search_context = get_search_context()
+    check_in = parse_date(search_context.get("check_in"))
+    check_out = parse_date(search_context.get("check_out"))
+    baseline_offer = best_offer(hotel.offers)
+    baseline_price = baseline_offer.effective_price if baseline_offer else None
+
     existing = PriceAlert.query.filter_by(
         user_id=current_user.id,
         hotel_id=hotel_id,
@@ -709,6 +718,18 @@ def create_alert(hotel_id):
         existing.target_price = (
             target_price
         )
+        existing.check_in = check_in
+        existing.check_out = check_out
+        existing.adults = search_context.get("adults", 2)
+        existing.rooms = search_context.get("rooms", 1)
+        if baseline_price is not None and existing.baseline_price is None:
+            existing.baseline_price = baseline_price
+        existing.latest_price = baseline_price
+        if baseline_price is not None:
+            if existing.lowest_observed_price is None:
+                existing.lowest_observed_price = baseline_price
+            else:
+                existing.lowest_observed_price = min(existing.lowest_observed_price, baseline_price)
 
         flash(
             "Your existing price alert was updated.",
@@ -720,6 +741,14 @@ def create_alert(hotel_id):
             user_id=current_user.id,
             hotel_id=hotel_id,
             target_price=target_price,
+            check_in=check_in,
+            check_out=check_out,
+            adults=search_context.get("adults", 2),
+            rooms=search_context.get("rooms", 1),
+            baseline_price=baseline_price,
+            latest_price=baseline_price,
+            lowest_observed_price=baseline_price,
+            currency="INR",
         )
 
         db.session.add(alert)

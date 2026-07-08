@@ -1,3 +1,5 @@
+from sqlalchemy import inspect, text
+
 from .extensions import db
 from .models import (
     Hotel,
@@ -7,6 +9,13 @@ from .models import (
 
 
 def seed_demo_data():
+    inspector = inspect(db.engine)
+    if "hotel" in inspector.get_table_names():
+        has_hotels = db.session.execute(
+            text("SELECT 1 FROM hotel LIMIT 1")
+        ).first()
+        if has_hotels:
+            return
 
     if Hotel.query.first():
         return

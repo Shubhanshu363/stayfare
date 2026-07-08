@@ -159,6 +159,10 @@ Hotels in {{ search.destination }} · Stayfare
                             · {{ provider_status.label }}
                         </span>
 
+                        <span class="muted-text">
+                            · Best price we found from connected providers
+                        </span>
+
                         {% if search.check_in and search.check_out %}
 
                             · {{ search.check_in }}
@@ -572,7 +576,11 @@ Hotels in {{ search.destination }} · Stayfare
                                     </strong>
 
                                     <span>
-                                        per night
+                                        Payable now ₹{{ "{:,}".format(item.best.payable_now) }}
+                                    </span>
+
+                                    <span>
+                                        per stay
                                     </span>
 
 
