@@ -14,6 +14,17 @@
         rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}"
     >
+
+    <!-- Travelpayouts Drive Script -->
+    <script nowprocket data-noptimize="1" data-cfasync="false" data-wpfc-render="false" seraph-accel-crit="1" data-no-defer="1">
+      (function () {
+          var script = document.createElement("script");
+          script.async = 1;
+          script.src = 'https://tp-em.com/NTQ4MjE4.js?t=548218';
+          document.head.appendChild(script);
+      })();
+    </script>
+
 </head>
 
 <body>
@@ -72,31 +83,20 @@
     </div>
 </nav>
 
-
 {% with messages = get_flashed_messages(with_categories=true) %}
-
     {% if messages %}
-
         <div class="container flash-container">
-
             {% for category, message in messages %}
-
                 <div class="flash flash-{{ category }}">
                     {{ message }}
                 </div>
-
             {% endfor %}
-
         </div>
-
     {% endif %}
-
 {% endwith %}
-
 
 {% block content %}
 {% endblock %}
-
 
 <footer class="footer">
 
